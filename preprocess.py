@@ -38,7 +38,6 @@ class Preprocess():
     
     def get_labels(self, directory):
         return self.get_files(directory)
-    # def process(self):
 
     def generate_labels_features(self, mp3s):
         Fs = 22050
@@ -55,6 +54,62 @@ class Preprocess():
                 P_compressed = np.log(1.0 + gamma * P)
                 C_nonorm = librosa.feature.chroma_cqt(C=P_compressed, bins_per_octave=12, n_octaves=7, fmin=librosa.midi_to_hz(24), norm=None)
                 print(C_nonorm)
+    def generate_song_labels(label_album_path):
+        song_label_dict = {}
+        file_labels = labels_dict[label_album_path]
+        for file in file_labels:
+            if not file['filename'].endswith('.lab'):
+                continue
+            song_label_dict[file['title']] = []
+            with open(os.path.join(label_album_path, file['filename'])) as fp:
+                line = fp.readline()
+                while line:
+                    tokens = line.split(' ')
+                    if len(tokens) == 1: tokens = line.split('\t')
+                    onset = int(float(tokens[0]))
+                    offset = int(float(tokens[1]))
+                    chord = tokens[2][:len(tokens[2]) - 1]
+                    song_label_dict[file['title']].append((onset, offset, chord))
+                    line = fp.readline()
+        return song_label_dict
+    def generate_features(albums_dict, album_label_dict):
+        features = []
+        counter = 0
+        for album in albums_dict:
+            album_title = path_to_album(album)
+            for song in albums_dict[album]:
+                counter += 1
+                song_path = os.path.join(album, song["filename"])
+                song_title = filename_to_title(song["filename"])
+                print(str(counter) +"th song: " + song_title)
+                data, sr = librosa.load(song_path)
+                if album_title in album_label_dict:
+                    if song_title in album_label_dict[album_title]:
+                        for intervals in album_label_dict[album_title][song_title]:
+                            start, end, chord = intervals[0], intervals[1], intervals[2]
+                            if end > start:
+                                start_index = librosa.time_to_samples(start)
+                                end_index = librosa.time_to_samples(end)
+                                audio_slice = data[int(start_index):int(end_index)]
+                                if len(audio_slice) == 0:
+                                    continue
+                                mfccs = librosa.feature.mfcc(y=audio_slice, sr=sample_rate, n_mfcc=40)
+                                mfccs_processed = np.mean(mfccs.T,axis=0)
+                                features.append([mfccs_processed,  chord])
+
+                                if chord != "N":
+                                    pitched, pitched_label = augment_pitch(audio_slice, sample_rate, chord)
+                                    features.append([pitched, pitched_label])
+
+                                stretch_noised = augment_stretched_noise(audio_slice, sample_rate, chord)
+                                features.append([stretch_noised, chord])
+                                
+                                noised = augment_stretched_noise(audio_slice, sample_rate, chord, True, False)
+                                features.append([noised, chord])
+                                
+                                stretched = augment_stretched_noise(audio_slice, sample_rate, chord, False, True)
+                                features.append([stretched, chord])
+        return features
 
 
 
