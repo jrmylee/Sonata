@@ -4,82 +4,33 @@ import librosa.display
 import os
 import matplotlib.pyplot as plt
 import sys
-import preprocess
-from dataset import ChordDataset
+import yaml
+import torch
 
-config = {
-    'model': {
-        'path': '/Users/jrmylee/Documents/Development/projects/mir/repos/BTC-ISMIR19',
-        'feature_size' : 108,
-        'timestep' : 108,
-        'num_chords' : 133,
-        'input_dropout' : 0.2,
-        'layer_dropout' : 0.2,
-        'attention_dropout' : 0.2,
-        'relu_dropout' : 0.2,
-        'num_layers' : 8,
-        'num_heads' : 4,
-        'hidden_size' : 128,
-        'total_key_depth' : 128,
-        'total_value_depth' : 128,
-        'filter_size' : 128,
-        'loss' : 'ce',
-        'probs_out' : False
-    } 
-}
+from models.preprocess import Preprocess
+from models.dataset import ChordDataset
+from models.augment import Augment
+from models.chords import Chords
+from sklearn.preprocessing import LabelEncoder
+
+config = yaml.load(open("./config/config.yaml"))
 
 sys.path.insert(1, config['model']['path'])
 from btc_model import *
-
-import torch
 from torch.utils.data import DataLoader
+
+sr = config['preprocess']['sample_rate']
+hop_size = config['preprocess']['hop_size']
+window_size = config['preprocess']['window_size']
+song_hz = config['preprocess']['song_hz']
+
+p = Preprocess(sr, hop_size, song_hz, window_size, Augment(Chords()))
+
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 
 # Get rid of this later, replace with internal chord system
-from sklearn.preprocessing import LabelEncoder
 le = LabelEncoder()
-
-def get_data():
-    datasets = {
-        "isophonics-beetles" : {
-            "mp3": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/beetles_albums",
-            "labels": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/beetles_annotations"
-        },
-        "isophonics-king" : {
-            "mp3": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/carol_king_albums",
-            "labels": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/carol_king_annotations"
-        }
-    }
-
-    sample_rate = 22050
-
-    p = preprocess.Preprocess()
-
-    king_albums = p.get_mp3(datasets['isophonics-king']['mp3'])
-    king_labels = p.get_labels(datasets['isophonics-king']['labels'])
-    beetles_albums = p.get_mp3(datasets['isophonics-beetles']['mp3'])
-    beetles_labels = p.get_labels(datasets['isophonics-beetles']['labels'])
-
-    data = [
-        (king_albums, king_labels),
-        (beetles_albums, beetles_labels)
-    ]
-    return data
-
-def get_chords_and_features(data):
-    features, chords = [], []
-    for d in data:
-        album_label_dict = {}
-        albums_dict = d[0]
-        l_dict = d[1]
-        for label_path in l_dict:
-            song_label_dict = generate_song_labels(label_path, l_dict)
-            album_title = path_to_album(label_path)
-            album_label_dict[album_title] = song_label_dict
-        f, c = generate_features(albums_dict, album_label_dict)
-        features.append(f)
-        chords.append(c)
 
 def get_dataset_from_file(file_path):
     loaded = torch.load(file_path)
