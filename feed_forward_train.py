@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import sys
 import preprocess
 import re
+import yaml
 
 from scipy.io import wavfile as wav
 from sklearn import metrics 
@@ -20,14 +21,16 @@ from keras.optimizers import Adam
 from keras.utils import to_categorical
 from keras.regularizers import l1, l2, l1_l2
 
+config = yaml.load(open("./config/config.yaml"))
+
 datasets = {
     "isophonics-beetles" : {
-        "mp3": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/beetles_albums",
-        "labels": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/beetles_annotations"
+        "mp3": config['preprocess']['data_path'] + "/beetles_albums",
+        "labels": config['preprocess']['data_path'] + "/beetles_annotations"
     },
     "isophonics-king" : {
-        "mp3": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/carol_king_albums",
-        "labels": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/carol_king_annotations"
+        "mp3": config['preprocess']['data_path'] + "/carol_king_albums",
+        "labels": config['preprocess']['data_path'] + "/carol_king_annotations"
     }
 }
 

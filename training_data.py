@@ -14,12 +14,12 @@ p = Preprocess(sr, hop_size, song_hz, window_size, Augment(Chords()))
 def get_data():
     datasets = {
         "isophonics-beetles" : {
-            "mp3": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/beetles_albums",
-            "labels": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/beetles_annotations"
+            "mp3": config['preprocess']['data_path'] + "/beetles_albums",
+            "labels": config['preprocess']['data_path'] + "/beetles_annotations"
         },
         "isophonics-king" : {
-            "mp3": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/carol_king_albums",
-            "labels": "/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics/carol_king_annotations"
+            "mp3": config['preprocess']['data_path'] + "/carol_king_albums",
+            "labels": config['preprocess']['data_path'] + "/carol_king_annotations"
         }
     }
 

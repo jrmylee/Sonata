@@ -17,6 +17,7 @@ model:
   probs_out : False
   sample_rate: 22050
 preprocess:
+  data_path: '/Users/jrmylee/Documents/Development/projects/mir/datasets/isophonics'
   sample_rate: 22050
   hop_size: 2048
   window_size: 10
