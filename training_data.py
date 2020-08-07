@@ -45,8 +45,8 @@ def get_chords_and_features(data):
             album_title = p.path_to_album(label_path)
             album_label_dict[album_title] = song_label_dict
         f, c = p.generate_features(albums_dict, album_label_dict)
-        features.append(f)
-        chords.append(c)
+        features.extend(f)
+        chords.extend(c)
     return features, chords
 
 d = get_data()

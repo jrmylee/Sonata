@@ -3,6 +3,7 @@ import re
 import numpy as np
 import librosa
 from comet_ml import Experiment
+from torch import load, save
 
 class Preprocess():
     def __init__(self, sample_rate, hop_size, song_hz, window_size, augmenter):
@@ -13,6 +14,7 @@ class Preprocess():
         self.hop_interval = hop_size / song_hz
         self.get_num_samples = lambda x : x / self.hop_interval
         self.augmenter = augmenter
+        self.save_dir = "/Users/jrmylee/Documents/Development/projects/mir/projects/sonata/checkpoints/"
 
     def get_files(self, directory):
         files = {}
@@ -116,26 +118,40 @@ class Preprocess():
                 counter += 1
                 song_path = os.path.join(album, song["filename"])
                 song_title = self.filename_to_title(song["filename"])
-                print(str(counter) +"th song: " + song_title)
-                data, sr = librosa.load(song_path)
-                if album_title in album_label_dict:
-                    if song_title in album_label_dict[album_title]:
-                        curr_start_time = 0
-                        total_duration = librosa.get_duration(y=data, sr=sr)
-                        num_samples = self.get_num_samples(total_duration)
-                        intervals = album_label_dict[album_title][song_title]
-                        while curr_start_time + self.window_size < total_duration:
-                            curr_sec = curr_start_time
-                            curr_chords = [] # chords in the time frame
-                            while curr_sec < curr_start_time + self.window_size:
-                                chord = self.get_chord_at_time(intervals, curr_sec)
-                                curr_sec += self.hop_interval
-                                curr_chords.append(chord)
-                            start_index, end_index = self.get_start_end_indices(curr_start_time, curr_start_time+self.window_size)
-                            audio_slice = data[int(start_index):int(end_index)]
-                            curr_features = self.get_mfcc(audio_slice, sr)
-                            features_list.append(curr_features)
-                            chords_list.append(curr_chords)
-                            curr_start_time += self.hop_interval
-                                
+                song_save_path = self.save_dir + song_title + "_data.pth"
+                if not os.path.exists(song_save_path):
+                    if album_title in album_label_dict:
+                        if song_title in album_label_dict[album_title]:
+                            print(str(counter) +"th song: " + song_title)
+                            print(song_title + " does not exist. Generating features.")
+                            data, sr = librosa.load(song_path)
+                            curr_start_time = 0
+                            total_duration = librosa.get_duration(y=data, sr=sr)
+                            num_samples = self.get_num_samples(total_duration)
+                            intervals = album_label_dict[album_title][song_title]
+                            while curr_start_time + self.window_size < total_duration:
+                                curr_sec = curr_start_time
+                                curr_chords = [] # chords in the time frame
+                                while curr_sec < curr_start_time + self.window_size:
+                                    chord = self.get_chord_at_time(intervals, curr_sec)
+                                    curr_sec += self.hop_interval
+                                    curr_chords.append(chord)
+                                start_index, end_index = self.get_start_end_indices(curr_start_time, curr_start_time+self.window_size)
+                                audio_slice = data[int(start_index):int(end_index)]
+                                curr_features = self.get_mfcc(audio_slice, sr)
+                                features_list.append(curr_features)
+                                chords_list.append(curr_chords)
+                                curr_start_time += self.hop_interval
+                            save_obj = {
+                                "song": song_title,
+                                "album": album_title,
+                                "features": curr_features,
+                                "chords": curr_chords
+                            }
+                            save(save_obj, song_save_path)
+                else:
+                    print(song_title + " exists.  Fetching cached.")
+                    cached = load(song_save_path)
+                    features_list.extend(cached['features'])
+                    chords_list.extend(cached['chords'])
         return features_list, chords_list
