@@ -5,7 +5,15 @@ but can be used with any dataset with labeled chords corresponding to a time int
 
 Note: Datasets do not come with corresponding audio due to copyright concerns.
 
+Setup:
+1. Clone Dataset
+2. Clone BTC Model
+3. add config/config.yaml with relevant paths
+4. mkdir checkpoints
+5. run train.py
+
 Example config(config/config.yaml):
+```
 model: 
   path: #PATH TO MODEL
   feature_size : 108
@@ -30,3 +38,4 @@ preprocess:
   hop_size: 2048
   window_size: 10
   song_hz: 22050
+```
