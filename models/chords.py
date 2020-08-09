@@ -17,8 +17,10 @@ class Chords:
             11: 'M7',
             12: 'P8'
         }
-    def shift(self, semitones, data, sr, label):
+    def shift_label(self, semitones, label):
         tonic = label[0:1]
         n = note.Note(tonic)
+        return n.transpose(self.interval_mapping[semitones]).name + label[1:]
+    def shift_audio(self, semitones, data, sr):
         new_data = librosa.effects.pitch_shift(data, sr, n_steps=semitones)
-        return (new_data, n.transpose(self.interval_mapping[semitones]).name + label[1:])
+        return new_data

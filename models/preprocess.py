@@ -6,7 +6,7 @@ from comet_ml import Experiment
 from torch import load, save
 
 class Preprocess():
-    def __init__(self, sample_rate, hop_size, song_hz, window_size, augmenter):
+    def __init__(self, sample_rate, hop_size, song_hz, window_size, save_dir, augmenter):
         self.sample_rate = sample_rate
         self.hop_size = hop_size
         self.song_hz = song_hz
@@ -14,7 +14,7 @@ class Preprocess():
         self.hop_interval = hop_size / song_hz
         self.get_num_samples = lambda x : x / self.hop_interval
         self.augmenter = augmenter
-        self.save_dir = "/Users/jrmylee/Documents/Development/projects/mir/projects/sonata/checkpoints/"
+        self.save_dir = save_dir
 
     def get_files(self, directory):
         files = {}
@@ -89,6 +89,9 @@ class Preprocess():
         return audio_slice, chords
 
     def get_chord_at_time(self, chord_intervals, time):
+        if len(chord_intervals) == 0:
+            print("len is 0")
+        
         for interval in chord_intervals:
             start, end = interval[0], interval[1]
             if start <= time and end >= time:
@@ -129,7 +132,11 @@ class Preprocess():
                             total_duration = librosa.get_duration(y=data, sr=sr)
                             num_samples = self.get_num_samples(total_duration)
                             intervals = album_label_dict[album_title][song_title]
+                            song_features = []
+                            song_chords = []
+                            print(total_duration)
                             while curr_start_time + self.window_size < total_duration:
+                                print(" " + str(curr_start_time) + " sec")
                                 curr_sec = curr_start_time
                                 curr_chords = [] # chords in the time frame
                                 while curr_sec < curr_start_time + self.window_size:
@@ -138,20 +145,31 @@ class Preprocess():
                                     curr_chords.append(chord)
                                 start_index, end_index = self.get_start_end_indices(curr_start_time, curr_start_time+self.window_size)
                                 audio_slice = data[int(start_index):int(end_index)]
-                                curr_features = self.get_mfcc(audio_slice, sr)
-                                features_list.append(curr_features)
-                                chords_list.append(curr_chords)
+                                pitched_slice, pitched_labels = self.augmenter.augment_pitch(audio_slice, sr, curr_chords)
+                                noised_slice = self.augmenter.augment_stretched_noise(audio_slice, sr)
+
+                                curr_features = self.get_cqt(audio_slice, sr)
+                                if len(pitched_slice) != 0:
+                                    pitched_features = self.get_cqt(pitched_slice, sr)
+                                    song_features.append(pitched_features)
+                                    song_chords.append(curr_chords)
+                                noised_features = self.get_cqt(noised_slice, sr)
+                                song_features.append(noised_features)
+                                song_chords.append(curr_chords)
+
+                                song_features.append(curr_features)
+                                song_chords.append(curr_chords)
+
                                 curr_start_time += self.hop_interval
                             save_obj = {
-                                "song": song_title,
-                                "album": album_title,
-                                "features": curr_features,
-                                "chords": curr_chords
+                            "features": song_features,
+                            "chords": song_chords
                             }
                             save(save_obj, song_save_path)
+                            features_list.extend(song_features)
+                            chords_list.extend(song_chords)
                 else:
-                    print(song_title + " exists.  Fetching cached.")
-                    cached = load(song_save_path)
-                    features_list.extend(cached['features'])
-                    chords_list.extend(cached['chords'])
+                    obj = load(song_save_path)
+                    features_list.extend(obj["features"])
+                    chords_list.extend(obj["chords"])
         return features_list, chords_list

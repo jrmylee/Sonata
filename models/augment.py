@@ -6,15 +6,16 @@ from audiomentations import Compose, AddGaussianNoise, TimeStretch, PitchShift, 
 class Augment():
     def __init__(self, chords):
         self.chords = chords
-    def augment_pitch(self, data, sr, label):
+    def augment_pitch(self, data, sr, labels):
         semitone = random.randint(1, 12)
-        aug_chord = self.chords.shift(semitone, data, sr,label)
-        mfccs = librosa.feature.mfcc(y=aug_chord[0], sr=sr, n_mfcc=40)
-        mfccs_processed = np.mean(mfccs.T,axis=0)
-        
-        return mfccs_processed, aug_chord[1]
+        aug_audio = self.chords.shift_audio(semitone, data, sr)
+        for i in range(len(labels)):
+            if labels[i] == "N":
+                return [], []
+            labels[i] = self.chords.shift_label(semitone, labels[i])
+        return aug_audio, labels
 
-    def augment_stretched_noise(self, data, sr, label, noise=True, stretch=True):
+    def augment_stretched_noise(self, data, sr, noise=True, stretch=True):
         composition = []
         if noise:
             composition.append(AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.015, p=0.5))
@@ -23,7 +24,5 @@ class Augment():
         augmenter = Compose(composition)
         
         aug_chord = augmenter(samples=data, sample_rate=sr)
-        mfccs = librosa.feature.mfcc(y=aug_chord, sr=sr, n_mfcc=40)
-        mfccs_processed = np.mean(mfccs.T,axis=0)
         
-        return mfccs_processed
+        return aug_chord

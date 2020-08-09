@@ -20,22 +20,16 @@ config = yaml.load(open("./config/config.yaml"))
 
 sys.path.insert(1, config['model']['path'])
 from btc_model import *
+
 from torch.utils.data import DataLoader
-
-sr = config['preprocess']['sample_rate']
-hop_size = config['preprocess']['hop_size']
-window_size = config['preprocess']['window_size']
-song_hz = config['preprocess']['song_hz']
-
-p = Preprocess(sr, hop_size, song_hz, window_size, Augment(Chords()))
 
 config = yaml.load(open("./config/config.yaml"))
 sr = config['preprocess']['sample_rate']
 hop_size = config['preprocess']['hop_size']
 window_size = config['preprocess']['window_size']
 song_hz = config['preprocess']['song_hz']
-
-p = Preprocess(sr, hop_size, song_hz, window_size, Augment(Chords()))
+save_dir = config['preprocess']['save_dir']
+p = Preprocess(sr, hop_size, song_hz, window_size, save_dir, Augment(Chords()))
 
 def get_data():
     datasets = {
@@ -62,7 +56,6 @@ def get_data():
 
 def get_chords_and_features(data):
     features, chords = [], []
-    save_dir = "/Users/jrmylee/Documents/Development/projects/mir/projects/sonata/cache/"
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
@@ -85,7 +78,6 @@ device = torch.device("cuda" if use_cuda else "cpu")
 model = BTC_model(config=config['model']).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9)
 
-features_path = "/Users/jrmylee/Documents/Development/projects/mir/playground/checkpoints/checkpoint.pth"
 full_dataset = list(zip(features, chords))
 
 train_size = int(0.8 * len(full_dataset))
@@ -98,15 +90,15 @@ test_dataloader = ChordDataloader(test_set, batch_size=128, shuffle=True, num_wo
 
 for epoch in range(1):
     model.train()
-    train_loss_list = []
-    total = 0.
-    correct = 0.
-    second_correct = 0.
+    
+    running_loss = 0.0
     print("epoch: " + str(epoch))
 #     Training
-    print("Training")
+    print(" Training...")
+    remaining = train_size
     for i_batch, data in enumerate(train_dataloader):
-        print("Batch: " + str(i_batch))
+        if i_batch % 10 == 0:
+            print(" Number of samples remaining: " + str(remaining))
         features, chords = data
         features.requires_grad = True
         
@@ -115,23 +107,39 @@ for epoch in range(1):
         chords = chords.to(device)
         # Train
         prediction, total_loss, weights, second = model(features, chords)
-
+        
+        running_loss += total_loss.item()
+        
+        if i_batch % 100 == 99:
+            print("  batch: " + str(i_batch))
+            print('[%d, %5d] loss: %.3f' %
+                  (epoch + 1, i + 1, running_loss / 100))
+            running_loss = 0.0
+        
         total_loss.backward()
         optimizer.step()
+        
+        remaining -= 128
 # Validation
-    print("validation")
+    print("Done training!  Validation:")
 
     with torch.no_grad():
         model.eval()
-        n = 0
+        correct = 0
+        total = 0
         for i, data in enumerate(test_dataloader):
-            features, chords = data
-            features.requires_grad = True
+            val_features, val_chords = data
+            val_features.requires_grad = True
             
             optimizer.zero_grad()
-            features = features.to(device)
-            chords = chords.to(device)
+            val_features = features.to(device)
+            val_chords = chords.to(device)
             # Train
-            prediction, total_loss, weights, second = model(features, chords)
-
-
+            val_prediction, val_loss, weights, val_second = model(val_features, val_chords)
+            total += val_prediction.size(0)
+            correct += (val_prediction.view(val_chords.size(0), 108) == val_chords).sum().item()
+        result = (100 * correct / total)
+        print("Validation result: %" + str(result) )
+    file_name = "model-epoch-" + str(epoch)
+    model_obj = {"model": model.state_dict(), 'optimizer': optimizer.state_dict(), "epoch": epoch}
+    torch.save(model_obj, file_name)
