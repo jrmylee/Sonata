@@ -11,6 +11,8 @@ Setup:
 3. add config/config.yaml with relevant paths
 4. mkdir checkpoints
 5. run train.py
+6. `pip3 install audiomentations numpy pandas pyrubberband librosa pyyaml mir_eval pretty_midi music21 comet_ml sklearn torch torchvision matplotlib numba==0.48`
+7. `apt-get install ffmpeg`
 
 Example config(config/config.yaml):
 ```

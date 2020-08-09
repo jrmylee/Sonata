@@ -134,9 +134,7 @@ class Preprocess():
                             intervals = album_label_dict[album_title][song_title]
                             song_features = []
                             song_chords = []
-                            print(total_duration)
                             while curr_start_time + self.window_size < total_duration:
-                                print(" " + str(curr_start_time) + " sec")
                                 curr_sec = curr_start_time
                                 curr_chords = [] # chords in the time frame
                                 while curr_sec < curr_start_time + self.window_size:
