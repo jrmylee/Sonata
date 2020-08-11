@@ -23,13 +23,14 @@ from btc_model import *
 
 from torch.utils.data import DataLoader
 
+aug = Augment(Chords())
 config = yaml.load(open("./config/config.yaml"))
 sr = config['preprocess']['sample_rate']
 hop_size = config['preprocess']['hop_size']
 window_size = config['preprocess']['window_size']
 song_hz = config['preprocess']['song_hz']
 save_dir = config['preprocess']['save_dir']
-p = Preprocess(sr, hop_size, song_hz, window_size, save_dir, Augment(Chords()))
+p = Preprocess(sr, hop_size, song_hz, window_size, save_dir, aug)
 
 def get_data():
     datasets = {
@@ -56,6 +57,11 @@ def get_data():
 
 def get_chords_and_features(data):
     features, chords = [], []
+    augment_fns = [
+        (lambda x, y, z : (x, z), ".pth"),
+        (aug.augment_pitch, "_pitched.pth"),
+        (aug.augment_stretched_noise, "_stretched.pth")
+    ]
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
@@ -64,9 +70,10 @@ def get_chords_and_features(data):
             song_label_dict = p.generate_song_labels(label_path, l_dict)
             album_title = p.path_to_album(label_path)
             album_label_dict[album_title] = song_label_dict
-        f, c = p.generate_features(albums_dict, album_label_dict)
-        features.extend(f)
-        chords.extend(c)
+        for fn, extension in augment_fns:
+            f, c = p.generate_features(albums_dict, album_label_dict, extension, fn)
+            features.extend(f)
+            chords.extend(c)
     return features, chords
 
 d = get_data()
