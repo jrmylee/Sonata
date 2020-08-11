@@ -109,8 +109,6 @@ class Preprocess():
         return start_index, end_index
 
     def generate_features(self, albums_dict, album_label_dict, file_extension, augment_fn):
-        features_list = []
-        chords_list = []
         counter = 0
         for album in albums_dict:
             album_title = self.path_to_album(album)
@@ -152,10 +150,3 @@ class Preprocess():
                             "chords": song_chords
                             }
                             save(save_obj, song_save_path)
-                            features_list.extend(song_features)
-                            chords_list.extend(song_chords)
-                else:
-                    obj = load(song_save_path)
-                    features_list.extend(obj["features"])
-                    chords_list.extend(obj["chords"])
-        return features_list, chords_list
