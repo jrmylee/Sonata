@@ -2,7 +2,13 @@ import os
 import re
 import numpy as np
 import librosa
-from torch import load, save
+import torch
+from nnAudio import Spectrogram
+
+if torch.cuda.is_available():
+    device = "cuda:0"
+else:
+    device = "cpu"
 
 class Preprocess():
     def __init__(self, sample_rate, hop_size, song_hz, window_size, save_dir, augmenter):
@@ -93,7 +99,7 @@ class Preprocess():
             start, end = interval[0], interval[1]
             if start <= time and end >= time:
                 return interval[2]
-        return "N"
+        return interval[len(interval) - 1][2]
 
     def get_mfcc(self, audio, sample_rate):
         mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=144)
@@ -110,6 +116,7 @@ class Preprocess():
 
     def generate_features(self, albums_dict, album_label_dict, file_extension, augment_fn):
         counter = 0
+        cqt_layer = Spectrogram.CQT(device=device, sr=22050, hop_length=2048, fmin=220, fmax=None, n_bins=108, bins_per_octave=24, norm=1, window='hann', center=True, pad_mode='reflect')
         for album in albums_dict:
             album_title = self.path_to_album(album)
             for song in albums_dict[album]:
@@ -139,14 +146,15 @@ class Preprocess():
                                 audio_slice = data[int(start_index):int(end_index)]
                                 
                                 audio_slice, curr_chords = augment_fn(audio_slice, sr, curr_chords)
-                                
+                                audio_slice = torch.tensor(audio_slice).float()
+
                                 if len(audio_slice) != 0:
-                                    curr_features = self.get_cqt(audio_slice, sr)
-                                    song_features.append(curr_features)
+                                    features = cqt_layer(audio_slice)
+                                    song_features.append(audio_slice)
                                     song_chords.append(curr_chords)
                                 curr_start_time += self.hop_interval
                             save_obj = {
                             "features": song_features,
                             "chords": song_chords
                             }
-                            save(save_obj, song_save_path)
+                            torch.save(save_obj, song_save_path)
