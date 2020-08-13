@@ -6,8 +6,10 @@ import torch
 from nnAudio import Spectrogram
 
 if torch.cuda.is_available():
+    print("Using GPU")
     device = "cuda:0"
 else:
+    print("Using CPU")
     device = "cpu"
 
 class Preprocess():
@@ -99,7 +101,7 @@ class Preprocess():
             start, end = interval[0], interval[1]
             if start <= time and end >= time:
                 return interval[2]
-        return interval[len(interval) - 1][2]
+        return "N"
 
     def get_mfcc(self, audio, sample_rate):
         mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=144)
@@ -146,11 +148,11 @@ class Preprocess():
                                 audio_slice = data[int(start_index):int(end_index)]
                                 
                                 audio_slice, curr_chords = augment_fn(audio_slice, sr, curr_chords)
-                                audio_slice = torch.tensor(audio_slice).float()
+                                audio_slice = torch.tensor(audio_slice).to(device).float()
 
                                 if len(audio_slice) != 0:
                                     features = cqt_layer(audio_slice)
-                                    song_features.append(audio_slice)
+                                    song_features.append(features)
                                     song_chords.append(curr_chords)
                                 curr_start_time += self.hop_interval
                             save_obj = {
