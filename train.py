@@ -62,15 +62,15 @@ def get_data():
 
     data = [
         (king_albums, king_labels),
-        # (beetles_albums, beetles_labels)
+        (beetles_albums, beetles_labels)
     ]
     return data
 
 def generate_chords_and_features(data):
     augment_fns = [
         (lambda x, y, z : (x, z), ".pth"),
-        # (aug.augment_pitch, "_pitched.pth"),
-        # (aug.augment_stretched_noise, "_stretched.pth")
+        (aug.augment_pitch, "_pitched.pth"),
+        (aug.augment_stretched_noise, "_stretched.pth")
     ]
     features = []
     chords = []
