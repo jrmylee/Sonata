@@ -78,74 +78,74 @@ def generate_chords_and_features(data):
 d = get_data()
 dataset = generate_chords_and_features(d)
 
-# use_cuda = torch.cuda.is_available()
-# device = torch.device("cuda" if use_cuda else "cpu")
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
 
-# model = BTC_model(config=config['model']).to(device)
-# optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9)
+model = BTC_model(config=config['model']).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9)
 
-# full_dataset = list(zip(features, chords))
+train_size = int(0.8 * len(dataset))
+test_size = len(dataset) - train_size
+train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
-# train_size = int(0.8 * len(full_dataset))
-# test_size = len(full_dataset) - train_size
-# train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
+print("Loading Data...")
+train_set, test_set = ChordDataset(train_dataset), ChordDataset(test_dataset) 
+train_dataloader = ChordDataloader(train_set, batch_size=128, shuffle=True, num_workers=0)
+test_dataloader = ChordDataloader(test_set, batch_size=128, shuffle=True, num_workers=0)
+print("Data loaded!")
 
-# train_set, test_set = ChordDataset(train_dataset), ChordDataset(test_dataset) 
-# train_dataloader = ChordDataloader(train_set, batch_size=128, shuffle=True, num_workers=0)
-# test_dataloader = ChordDataloader(test_set, batch_size=128, shuffle=True, num_workers=0)
-
-# for epoch in range(1):
-#     model.train()
+for epoch in range(1):
+    model.train()
     
-#     running_loss = 0.0
-#     print("epoch: " + str(epoch))
-# #     Training
-#     print(" Training...")
-#     remaining = train_size
-#     for i_batch, data in enumerate(train_dataloader):
-#         if i_batch % 10 == 0:
-#             print(" Number of samples remaining: " + str(remaining))
-#         features, chords = data
-#         features.requires_grad = True
+    running_loss = 0.0
+    print("epoch: " + str(epoch))
+#     Training
+    print(" Training...")
+    remaining = train_size
+    for i_batch, data in enumerate(train_dataloader):
+        if i_batch % 10 == 0:
+            print(" Number of samples remaining: " + str(remaining))
+        features, chords = data
+        features.requires_grad = True
         
-#         optimizer.zero_grad()
-#         features = features.to(device)
-#         chords = chords.to(device)
-#         # Train
-#         prediction, total_loss, weights, second = model(features, chords)
+        optimizer.zero_grad()
+        features = features.to(device)
+        chords = chords.to(device)
+        # Train
+        prediction, total_loss, weights, second = model(features, chords)
         
-#         running_loss += total_loss.item()
+        running_loss += total_loss.item()
         
-#         if i_batch % 100 == 99:
-#             print("  batch: " + str(i_batch))
-#             print('[%d, %5d] loss: %.3f' %
-#                   (epoch + 1, i + 1, running_loss / 100))
-#             running_loss = 0.0
+        if i_batch % 100 == 99:
+            print("  batch: " + str(i_batch))
+            print('[%d, %5d] loss: %.3f' %
+                  (epoch + 1, i + 1, running_loss / 100))
+            running_loss = 0.0
         
-#         total_loss.backward()
-#         optimizer.step()
+        total_loss.backward()
+        optimizer.step()
         
-#         remaining -= 128
-# # Validation
-#     print("Done training!  Validation:")
+        remaining -= 128
+# Validation
+    print("Done training!  Validation:")
 
-#     with torch.no_grad():
-#         model.eval()
-#         correct = 0
-#         total = 0
-#         for i, data in enumerate(test_dataloader):
-#             val_features, val_chords = data
-#             val_features.requires_grad = True
+    with torch.no_grad():
+        model.eval()
+        correct = 0
+        total = 0
+        for i, data in enumerate(test_dataloader):
+            val_features, val_chords = data
+            val_features.requires_grad = True
             
-#             optimizer.zero_grad()
-#             val_features = features.to(device)
-#             val_chords = chords.to(device)
-#             # Train
-#             val_prediction, val_loss, weights, val_second = model(val_features, val_chords)
-#             total += val_prediction.size(0)
-#             correct += (val_prediction.view(val_chords.size(0), 108) == val_chords).sum().item()
-#         result = (100 * correct / total)
-#         print("Validation result: %" + str(result) )
-#     file_name = "model-epoch-" + str(epoch)
-#     model_obj = {"model": model.state_dict(), 'optimizer': optimizer.state_dict(), "epoch": epoch}
-#     torch.save(model_obj, file_name)
+            optimizer.zero_grad()
+            val_features = features.to(device)
+            val_chords = chords.to(device)
+            # Train
+            val_prediction, val_loss, weights, val_second = model(val_features, val_chords)
+            total += val_prediction.size(0)
+            correct += (val_prediction.view(val_chords.size(0), 108) == val_chords).sum().item()
+        result = (100 * correct / total)
+        print("Validation result: %" + str(result) )
+    file_name = "model-epoch-" + str(epoch)
+    model_obj = {"model": model.state_dict(), 'optimizer': optimizer.state_dict(), "epoch": epoch}
+    torch.save(model_obj, file_name)
