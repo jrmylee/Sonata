@@ -119,6 +119,7 @@ class Preprocess():
     def generate_features(self, albums_dict, album_label_dict, file_extension, augment_fn):
         counter = 0
         cqt_layer = Spectrogram.CQT(device=device, sr=22050, hop_length=2048, fmin=220, fmax=None, n_bins=108, bins_per_octave=24, norm=1, window='hann', center=True, pad_mode='reflect')
+        features_file_list = []
         for album in albums_dict:
             album_title = self.path_to_album(album)
             for song in albums_dict[album]:
@@ -160,3 +161,7 @@ class Preprocess():
                             "chords": song_chords
                             }
                             torch.save(save_obj, song_save_path)
+                            features_file_list.append(song_save_path)
+                else:
+                    features_file_list.append(song_save_path)
+        return features_file_list
