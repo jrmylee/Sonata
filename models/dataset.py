@@ -3,8 +3,9 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 class ChordDataset(Dataset):
-    def __init__(self, paths):
+    def __init__(self, main_dir, paths):
         self.le = LabelEncoder()
+        self.main_dir
         self.paths = paths
     def __len__(self):
         return len(self.paths)
@@ -13,7 +14,7 @@ class ChordDataset(Dataset):
             idx = idx.tolist()
 
         filename = self.paths[idx]
-        file = torch.load(filename)
+        file = torch.load(os.path.join(self.main_dir, filename))
 
         audio = torch.log(torch.abs(file['feature']) + 1e-6)
         sample = { 'audio': audio, 'chord': file['chord']}

@@ -88,8 +88,7 @@ def generate_chords_and_features(data):
 # d = get_data()
 # dataset = generate_chords_and_features(d)
 
-data = "/home/jrmylee/sonata/saved"
-dataset = os.listdir(data)
+dataset = os.listdir(save_dir)
 
 model = BTC_model(config=config['model']).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9)
@@ -99,7 +98,7 @@ test_size = len(dataset) - train_size
 train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
 print("Loading Data...")
-train_set, test_set = ChordDataset(train_dataset), ChordDataset(test_dataset) 
+train_set, test_set = ChordDataset(save_dir, train_dataset), ChordDataset(save_dir, test_dataset) 
 train_dataloader = ChordDataloader(train_set, batch_size=128, shuffle=True, num_workers=0)
 test_dataloader = ChordDataloader(test_set, batch_size=128, shuffle=True, num_workers=0)
 print("Data loaded!")
