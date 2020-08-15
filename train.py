@@ -68,12 +68,10 @@ def get_data():
 
 def generate_chords_and_features(data):
     augment_fns = [
-        (lambda x, y, z : (x, z), ".pth"),
-        (aug.augment_pitch, "_pitched.pth"),
-        (aug.augment_stretched_noise, "_stretched.pth")
+        (lambda x, y, z : (x, z), ""),
+        (aug.augment_pitch, "_pitched"),
+        (aug.augment_stretched_noise, "_stretched")
     ]
-    features = []
-    chords = []
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
@@ -85,8 +83,8 @@ def generate_chords_and_features(data):
         for fn, extension in augment_fns:
             p.generate_features(albums_dict, album_label_dict, extension, fn)
 
-# d = get_data()
-# dataset = generate_chords_and_features(d)
+d = get_data()
+generate_chords_and_features(d)
 
 dataset = os.listdir(save_dir)
 

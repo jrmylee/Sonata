@@ -19,5 +19,5 @@ class ChordDataset(Dataset):
         file = torch.load(os.path.join(self.main_dir, filename))
 
         audio = torch.log(torch.abs(file['feature']) + 1e-6)
-        sample = { 'audio': audio, 'chord': le.fit_transform(file['chord'])}
+        sample = { 'audio': audio, 'chord': self.le.fit_transform(file['chord'])}
         return sample

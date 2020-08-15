@@ -136,8 +136,7 @@ class Preprocess():
                             curr_start_time = 0
                             total_duration = librosa.get_duration(y=data, sr=sr)
                             intervals = album_label_dict[album_title][song_title]
-                            song_features = []
-                            song_chords = []
+                            i = 0
                             while curr_start_time + self.window_size < total_duration:
                                 curr_sec = curr_start_time
                                 curr_chords = [] # chords in the time frame
@@ -153,21 +152,13 @@ class Preprocess():
 
                                 if len(audio_slice) != 0:
                                     features = self.cqt_layer(audio_slice)
-                                    song_features.append(features)
-                                    song_chords.append(curr_chords)
+                                    save_obj = {
+                                        "feature": features,
+                                        "chords": curr_chords
+                                    }
+                                    torch.save(save_obj, song_save_path + str(i) + ".pth")
                                 curr_start_time += self.hop_interval
-                            save_obj = {
-                            "features": song_features,
-                            "chords": song_chords
-                            }
-                            torch.save(save_obj, song_save_path)
-                            features.extend(song_features)
-                            chords.extend(curr_chords)
-                else:
-                    obj = torch.load(song_save_path)
-                    features.extend(obj['features'])
-                    chords.extend(obj['chords'])
-        return features, chords
+                                i += 1
     def split_data(self, path):
         for filename in os.listdir(path):
             if filename.endswith('pth'):
