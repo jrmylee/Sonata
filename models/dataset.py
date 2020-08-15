@@ -11,7 +11,7 @@ class ChordDataset(Dataset):
     def __getitem__(self, idx):
         if is_tensor(idx):
             idx = idx.tolist()
-        audio = np.log(np.abs(self.dataset[idx]['features']) + 1e-6)
+        audio = self.dataset[idx]['features']
         chords = self.le.fit_transform(self.dataset[idx]['chords'])
         sample = { 'audio': audio, 'chord': chords}
         return sample

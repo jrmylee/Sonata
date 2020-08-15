@@ -3,7 +3,6 @@ import re
 import numpy as np
 import librosa
 import torch
-from nnAudio import Spectrogram
 
 if torch.cuda.is_available():
     print("Using GPU")
@@ -13,7 +12,7 @@ else:
     device = "cpu"
 
 class Preprocess():
-    def __init__(self, sample_rate, hop_size, song_hz, window_size, save_dir, augmenter):
+    def __init__(self, sample_rate, hop_size, song_hz, window_size, save_dir, augmenter, cqt_layer):
         self.sample_rate = sample_rate
         self.hop_size = hop_size
         self.song_hz = song_hz
@@ -22,6 +21,7 @@ class Preprocess():
         self.get_num_samples = lambda x : x / self.hop_interval
         self.augmenter = augmenter
         self.save_dir = save_dir
+        self.cqt_layer = cqt_layer
 
     def get_files(self, directory):
         files = {}
@@ -118,7 +118,6 @@ class Preprocess():
 
     def generate_features(self, albums_dict, album_label_dict, file_extension, augment_fn):
         counter = 0
-        cqt_layer = Spectrogram.CQT(device=device, sr=22050, hop_length=2048, fmin=220, fmax=None, n_bins=108, bins_per_octave=24, norm=1, window='hann', center=True, pad_mode='reflect')
         features_file_list = []
         for album in albums_dict:
             album_title = self.path_to_album(album)
@@ -152,7 +151,7 @@ class Preprocess():
                                 audio_slice = torch.tensor(audio_slice).to(device).float()
 
                                 if len(audio_slice) != 0:
-                                    features = cqt_layer(audio_slice)
+                                    features = self.cqt_layer(audio_slice)
                                     song_features.append(features)
                                     song_chords.append(curr_chords)
                                 curr_start_time += self.hop_interval

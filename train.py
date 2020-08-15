@@ -10,6 +10,7 @@ import sys
 import yaml
 import torch
 import multiprocessing as mp
+from nnAudio import Spectrogram
 
 from models.preprocess import Preprocess
 from models.dataset import ChordDataset
@@ -24,6 +25,14 @@ from btc_model import *
 
 from torch.utils.data import DataLoader
 
+
+if torch.cuda.is_available():
+    print("Using GPU")
+    device = "cuda:0"
+else:
+    print("Using CPU")
+    device = "cpu"
+
 aug = Augment(Chords())
 config = yaml.load(open("./config/config.yaml"))
 sr = config['preprocess']['sample_rate']
@@ -31,7 +40,8 @@ hop_size = config['preprocess']['hop_size']
 window_size = config['preprocess']['window_size']
 song_hz = config['preprocess']['song_hz']
 save_dir = config['preprocess']['save_dir']
-p = Preprocess(sr, hop_size, song_hz, window_size, save_dir, aug)
+cqt_layer = Spectrogram.CQT(device=device, sr=22050, hop_length=2048, fmin=220, fmax=None, n_bins=108, bins_per_octave=24, norm=1, window='hann', center=True, pad_mode='reflect')
+p = Preprocess(sr, hop_size, song_hz, window_size, save_dir, aug, cqt_layer)
 
 def get_data():
     datasets = {
@@ -78,9 +88,6 @@ def generate_chords_and_features(data):
 d = get_data()
 dataset = generate_chords_and_features(d)
 
-use_cuda = torch.cuda.is_available()
-device = torch.device("cuda" if use_cuda else "cpu")
-
 model = BTC_model(config=config['model']).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9)
 
@@ -109,7 +116,6 @@ for epoch in range(1):
         features.requires_grad = True
         
         optimizer.zero_grad()
-        features = features.to(device)
         chords = chords.to(device)
         # Train
         prediction, total_loss, weights, second = model(features, chords)
