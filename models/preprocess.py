@@ -118,7 +118,8 @@ class Preprocess():
 
     def generate_features(self, albums_dict, album_label_dict, file_extension, augment_fn):
         counter = 0
-        features_file_list = []
+        features = []
+        chords = []
         for album in albums_dict:
             album_title = self.path_to_album(album)
             for song in albums_dict[album]:
@@ -160,7 +161,10 @@ class Preprocess():
                             "chords": song_chords
                             }
                             torch.save(save_obj, song_save_path)
-                            features_file_list.append(song_save_path)
+                            features.extend(song_features)
+                            chords.extend(curr_chords)
                 else:
-                    features_file_list.append(song_save_path)
-        return features_file_list
+                    obj = torch.load(song_save_path)
+                    features.extend(obj['features'])
+                    chords.extend(obj['chords'])
+        return features, chords

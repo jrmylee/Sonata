@@ -62,17 +62,18 @@ def get_data():
 
     data = [
         (king_albums, king_labels),
-        (beetles_albums, beetles_labels)
+        # (beetles_albums, beetles_labels)
     ]
     return data
 
 def generate_chords_and_features(data):
     augment_fns = [
         (lambda x, y, z : (x, z), ".pth"),
-        (aug.augment_pitch, "_pitched.pth"),
-        (aug.augment_stretched_noise, "_stretched.pth")
+        # (aug.augment_pitch, "_pitched.pth"),
+        # (aug.augment_stretched_noise, "_stretched.pth")
     ]
-    files_list = []
+    features = []
+    chords = []
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
@@ -82,8 +83,10 @@ def generate_chords_and_features(data):
             album_title = p.path_to_album(label_path)
             album_label_dict[album_title] = song_label_dict
         for fn, extension in augment_fns:
-            files_list.extend(p.generate_features(albums_dict, album_label_dict, extension, fn))
-    return files_list
+            f, c = p.generate_features(albums_dict, album_label_dict, extension, fn)
+            features.extend(f)
+            chords.extend(c)
+    return list(zip(features, chords))
 
 d = get_data()
 dataset = generate_chords_and_features(d)
