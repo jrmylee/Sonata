@@ -2,10 +2,12 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
+
+import os
 class ChordDataset(Dataset):
     def __init__(self, main_dir, paths):
         self.le = LabelEncoder()
-        self.main_dir
+        self.main_dir = main_dir
         self.paths = paths
     def __len__(self):
         return len(self.paths)
