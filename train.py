@@ -83,13 +83,13 @@ def generate_chords_and_features(data):
             album_title = p.path_to_album(label_path)
             album_label_dict[album_title] = song_label_dict
         for fn, extension in augment_fns:
-            f, c = p.generate_features(albums_dict, album_label_dict, extension, fn)
-            features.extend(f)
-            chords.extend(c)
-    return list(zip(features, chords))
+            p.generate_features(albums_dict, album_label_dict, extension, fn)
 
-d = get_data()
-dataset = generate_chords_and_features(d)
+# d = get_data()
+# dataset = generate_chords_and_features(d)
+
+data = "/home/jrmylee/sonata/saved"
+dataset = os.listdir(data)
 
 model = BTC_model(config=config['model']).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9)

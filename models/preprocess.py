@@ -168,3 +168,16 @@ class Preprocess():
                     features.extend(obj['features'])
                     chords.extend(obj['chords'])
         return features, chords
+    def split_data(self, path):
+        for filename in os.listdir(path):
+            if filename.endswith('pth'):
+                file_path = os.path.join(path, filename)
+                if not file_path[len(file_path) - 5].isdigit():
+                    obj = torch.load(file_path)
+                    if 'features' in obj:
+                        for i in range(len(obj['features'])):
+                            feature = obj['features'][i]
+                            chords_list = obj['chords'][i] 
+                            torch.save({'song_name': filename[:-4], 'feature': feature, 'chord': chords_list}, path + filename[:-4] + str(i) + ".pth")
+                        print("deleting " + file_path)
+                        os.remove(file_path)
