@@ -128,7 +128,7 @@ for epoch in range(1):
         if i_batch % 100 == 99:
             print("  batch: " + str(i_batch))
             print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 100))
+                  (epoch + 1, i_batch + 1, running_loss / 100))
             running_loss = 0.0
         
         total_loss.backward()
