@@ -11,9 +11,9 @@ def _collate_fn(batch):
     for i in range(batch_size):
         sample = batch[i]
         feature = sample['audio']
-        chord = sample['chord']
+        labels = sample['chords']
         featues_arr.append(feature)
-        chords.append(chord)
+        chords.append(labels)
     torch.cat(featues_arr, out=features)
     chords = torch.tensor(chords, dtype=torch.int64)
 
