@@ -127,7 +127,7 @@ class Preprocess():
                 song_path = os.path.join(album, song["filename"])
                 song_title = self.filename_to_title(song["filename"])
                 song_save_path = self.save_dir + song_title + file_extension
-                if not os.path.exists(song_save_path):
+                if not os.path.exists(song_save_path + "0.pth"):
                     if album_title in album_label_dict:
                         if song_title in album_label_dict[album_title]:
                             print(str(counter) +"th song: " + song_title)

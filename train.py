@@ -71,9 +71,10 @@ def get_data():
 def generate_chords_and_features(data):
     augment_fns = [
         (lambda x, y, z : (x, z), ""),
-        (aug.augment_pitch, "_pitched"),
         (aug.augment_stretched_noise, "_stretched")
     ]
+    for i in range(1, 13):
+        augment_fns.append((aug.get_augment_pitch_fn(i), str(i) + "_pitched"))
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
