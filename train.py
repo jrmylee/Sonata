@@ -40,8 +40,10 @@ hop_size = config['preprocess']['hop_size']
 window_size = config['preprocess']['window_size']
 song_hz = config['preprocess']['song_hz']
 save_dir = config['preprocess']['save_dir']
-cqt_layer = Spectrogram.CQT(device=device, sr=22050, hop_length=2048, fmin=220, fmax=None, n_bins=108, bins_per_octave=24, norm=1, window='hann', center=True, pad_mode='reflect')
+cqt_layer = Spectrogram.CQT(device=device, sr=sr, hop_length=hop_size, fmin=220, fmax=None, n_bins=108, bins_per_octave=24, norm=1, window='hann', center=True, pad_mode='reflect')
 p = Preprocess(sr, hop_size, song_hz, window_size, save_dir, aug, cqt_layer)
+
+num_epochs = config['model'].get('num_epochs')
 
 def get_data():
     datasets = {
@@ -83,8 +85,9 @@ def generate_chords_and_features(data):
         for fn, extension in augment_fns:
             p.generate_features(albums_dict, album_label_dict, extension, fn)
 
-d = get_data()
-generate_chords_and_features(d)
+if not config['preprocess'].get("preprocessed"):
+    d = get_data()
+    generate_chords_and_features(d)
 
 dataset = os.listdir(save_dir)
 
@@ -101,7 +104,7 @@ train_dataloader = ChordDataloader(train_set, batch_size=128, shuffle=True, num_
 test_dataloader = ChordDataloader(test_set, batch_size=128, shuffle=True, num_workers=0)
 print("Data loaded!")
 
-for epoch in range(1):
+for epoch in range(num_epochs):
     model.train()
     
     running_loss = 0.0
@@ -109,7 +112,7 @@ for epoch in range(1):
 #     Training
     print(" Training...")
     remaining = train_size
-    for i_batch, data in enumerate(train_dataloader):
+    for i_batch, data in enumerate(train_dataloader): 
         if i_batch % 10 == 0:
             print(" Number of samples remaining: " + str(remaining))
         features, chords = data
@@ -132,7 +135,8 @@ for epoch in range(1):
         optimizer.step()
         
         remaining -= 128
-# Validation
+# Validation 
+
     print("Done training!  Validation:")
 
     with torch.no_grad():
@@ -152,6 +156,6 @@ for epoch in range(1):
             correct += (val_prediction.view(val_chords.size(0), 108) == val_chords).sum().item()
         result = (100 * correct / total)
         print("Validation result: %" + str(result) )
-    file_name = "model-epoch-" + str(epoch)
+    file_name = config['model'].get("output_dir") + "model-epoch-" + str(epoch)
     model_obj = {"model": model.state_dict(), 'optimizer': optimizer.state_dict(), "epoch": epoch}
     torch.save(model_obj, file_name)
