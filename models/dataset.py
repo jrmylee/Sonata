@@ -17,8 +17,8 @@ class ChordDataset(Dataset):
 
         filename = self.paths[idx]
         file = torch.load(os.path.join(self.main_dir, filename))
-
-        chords = self.chord_class.chords(file['chords'])
+        chords = list(map(lambda x : x.replace("-",""), file['chords']))
+        chords = self.chord_class.chords(chords)
         chords = self.chord_class.reduce_to_triads(chords)
         chords = self.chord_class.assign_chord_id(chords)
         chords = list(chords['chord_id'])

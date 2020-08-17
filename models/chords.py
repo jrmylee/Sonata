@@ -58,7 +58,8 @@ class Chords:
             'min11': self.interval_list('(1,b3,5,b7,9,11)'),
             '13': self.interval_list('(1,3,5,b7,13)'),
             'maj13': self.interval_list('(1,3,5,7,13)'),
-            'min13': self.interval_list('(1,b3,5,b7,13)')
+            'min13': self.interval_list('(1,b3,5,b7,13)'),
+            '7sus': self.interval_list('(1,4,5,b7')
         }
         self.interval_mapping = {
             1 : 'm2',
