@@ -74,7 +74,7 @@ def generate_chords_and_features(data):
         (aug.get_stretched_audio, lambda l : l, "_stretched")
     ]
     for i in range(1, 13):
-        augment_fns.append(aug.get_augment_pitch_audio(i), aug.get_augment_pitch_chords(i), str(i) + "_pitched")
+        augment_fns.append((aug.get_augment_pitch_audio(i), aug.get_augment_pitch_chords(i), str(i) + "_pitched"))
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
