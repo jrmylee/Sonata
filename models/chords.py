@@ -3,6 +3,7 @@ import librosa
 import numpy as np
 import pandas as pd
 import mir_eval
+import pyrubberband as pyrb
 
 CHORD_DTYPE = [('root', np.int),
                ('bass', np.int),
@@ -81,7 +82,7 @@ class Chords:
         n = note.Note(tonic)
         return n.transpose(self.interval_mapping[semitones]).name + label[1:]
     def shift_audio(self, semitones, data, sr):
-        new_data = librosa.effects.pitch_shift(data, sr, n_steps=semitones)
+        new_data = pyrb.pitch_shift(data, sr, semitones)
         return new_data
     def chords(self, labels):
 
