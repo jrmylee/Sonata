@@ -116,7 +116,7 @@ class Preprocess():
         end_index = librosa.time_to_samples(end_time)
         return start_index, end_index
 
-    def generate_features(self, albums_dict, album_label_dict, file_extension, augment_fn):
+    def generate_features(self, albums_dict, album_label_dict, file_extension, augment_audio_fn, augment_chords_fn):
         counter = 0
         features = []
         chords = []
@@ -133,6 +133,8 @@ class Preprocess():
                             print(str(counter) +"th song: " + song_title)
                             print(song_title + file_extension + " does not exist. Generating features.")
                             data, sr = librosa.load(song_path)
+                            data = augment_audio_fn(data, sr)
+
                             curr_start_time = 0
                             total_duration = librosa.get_duration(y=data, sr=sr)
                             intervals = album_label_dict[album_title][song_title]
@@ -147,7 +149,7 @@ class Preprocess():
                                 start_index, end_index = self.get_start_end_indices(curr_start_time, curr_start_time+self.window_size)
                                 audio_slice = data[int(start_index):int(end_index)]
                                 
-                                audio_slice, curr_chords = augment_fn(audio_slice, sr, curr_chords)
+                                curr_chords = augment_chords_fn(curr_chords)
                                 audio_slice = torch.tensor(audio_slice).to(device).float()
 
                                 if len(audio_slice) != 0:

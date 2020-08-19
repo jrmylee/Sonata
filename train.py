@@ -70,11 +70,11 @@ def get_data():
 
 def generate_chords_and_features(data):
     augment_fns = [
-        (lambda x, y, z : (x, z), ""),
-        (aug.augment_stretched_noise, "_stretched")
+        (lambda x, sr : (x, sr), lambda l : l, ""),
+        (aug.get_stretched_audio, lambda l : l, "_stretched")
     ]
     for i in range(1, 13):
-        augment_fns.append((aug.get_augment_pitch_fn(i), str(i) + "_pitched"))
+        augment_fns.append(aug.get_augment_pitch_audio(i), aug.get_augment_pitch_chords(i), str(i) + "_pitched")
     for d in data:
         album_label_dict = {}
         albums_dict = d[0]
@@ -83,8 +83,8 @@ def generate_chords_and_features(data):
             song_label_dict = p.generate_song_labels(label_path, l_dict)
             album_title = p.path_to_album(label_path)
             album_label_dict[album_title] = song_label_dict
-        for fn, extension in augment_fns:
-            p.generate_features(albums_dict, album_label_dict, extension, fn)
+        for fn1, fn2, extension in augment_fns:
+            p.generate_features(albums_dict, album_label_dict, extension, fn1, fn2)
 
 if not config['preprocess'].get("preprocessed"):
     d = get_data()
