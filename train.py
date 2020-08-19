@@ -70,7 +70,7 @@ def get_data():
 
 def generate_chords_and_features(data):
     augment_fns = [
-        (lambda x, sr : (x, sr), lambda l : l, ""),
+        (lambda x, sr : x, lambda l : l, ""),
         (aug.get_stretched_audio, lambda l : l, "_stretched")
     ]
     for i in range(1, 13):

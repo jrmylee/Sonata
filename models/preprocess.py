@@ -22,6 +22,7 @@ class Preprocess():
         self.augmenter = augmenter
         self.save_dir = save_dir
         self.cqt_layer = cqt_layer
+        self.songs_memo = {}
 
     def get_files(self, directory):
         files = {}
@@ -132,7 +133,11 @@ class Preprocess():
                         if song_title in album_label_dict[album_title]:
                             print(str(counter) +"th song: " + song_title)
                             print(song_title + file_extension + " does not exist. Generating features.")
-                            data, sr = librosa.load(song_path)
+                            if song_title in self.songs_memo:
+                                data, sr = self.songs_memo[song_title]
+                            else:
+                                data, sr = librosa.load(song_path)
+                                self.songs_memo[song_title] = (data, sr)
                             data = augment_audio_fn(data, sr)
 
                             curr_start_time = 0
