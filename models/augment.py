@@ -13,9 +13,8 @@ class Augment():
     def get_augment_pitch_chords(self, semitone):
         def augment_chords(labels):
             for i in range(len(labels)):
-                if labels[i] == "N":
-                    return [], []
-                labels[i] = self.chords.shift_label(semitone, labels[i])
+                if labels[i] != "N":
+                    labels[i] = self.chords.shift_label(semitone, labels[i])
             return labels
         return augment_chords
 
@@ -28,3 +27,8 @@ class Augment():
         
         return aug_chord
     
+    def f(name):
+        file = torch.load("./saved/" + name)
+        if isinstance(file['chords'][0], list):
+            os.remove("./saved/" + name)
+        

@@ -117,10 +117,53 @@ class Preprocess():
         end_index = librosa.time_to_samples(end_time)
         return start_index, end_index
 
+    # def generate_song_paths(self, albums_dict, album_label_dict, augment_audio_fn, augment_chords_fn):
+    #     for album in albums_dict:
+    #         album_title = self.path_to_album(album)
+    #         for song in albums_dict[album]:
+    #             song_path = os.path.join(album, song["filename"])
+    #             song_title = self.filename_to_title(song["filename"])
+    #             song_save_path = self.save_dir + song_title + file_extension 
+    #             if album_title in album_label_dict:
+    #                 if song_title in album_label_dict[album_title]:
+    #                     self.song_paths.append(song_path)
+    # def generate_song_features(self, song_path, song_title):
+    #     if song_title in self.songs_memo:
+    #         data, sr = self.songs_memo[song_title]
+    #     else:
+    #         data, sr = librosa.load(song_path)
+    #         self.songs_memo[song_title] = (data, sr)
+    #     data = augment_audio_fn(data, sr)
+
+    #     curr_start_time = 0
+    #     total_duration = librosa.get_duration(y=data, sr=sr)
+    #     intervals = album_label_dict[album_title][song_title]
+    #     i = 0
+    #     while curr_start_time + self.window_size < total_duration:
+    #         if not os.path.exists(song_save_path + str(i) + ".pth"):
+    #             curr_sec = curr_start_time
+    #             curr_chords = [] # chords in the time frame
+    #             while curr_sec < curr_start_time + self.window_size:
+    #                 chord = self.get_chord_at_time(intervals, curr_sec)
+    #                 curr_sec += self.hop_interval
+    #                 curr_chords.append(chord)
+    #             start_index, end_index = self.get_start_end_indices(curr_start_time, curr_start_time+self.window_size)
+    #             audio_slice = data[int(start_index):int(end_index)]
+                
+    #             curr_chords = augment_chords_fn(curr_chords)
+    #             audio_slice = torch.tensor(audio_slice).to(device).float()
+
+    #             if len(audio_slice) != 0:
+    #                 features = self.cqt_layer(audio_slice)
+    #                 save_obj = {
+    #                     "feature": features,
+    #                     "chords": curr_chords
+    #                 }
+    #                 torch.save(save_obj, song_save_path + str(i) + ".pth")
+    #         curr_start_time += self.hop_interval
+    #         i += 1
     def generate_features(self, albums_dict, album_label_dict, file_extension, augment_audio_fn, augment_chords_fn):
         counter = 0
-        features = []
-        chords = []
         for album in albums_dict:
             album_title = self.path_to_album(album)
             for song in albums_dict[album]:
@@ -128,23 +171,22 @@ class Preprocess():
                 song_path = os.path.join(album, song["filename"])
                 song_title = self.filename_to_title(song["filename"])
                 song_save_path = self.save_dir + song_title + file_extension
-                if not os.path.exists(song_save_path + "0.pth"):
-                    if album_title in album_label_dict:
-                        if song_title in album_label_dict[album_title]:
-                            print(str(counter) +"th song: " + song_title)
-                            print(song_title + file_extension + " does not exist. Generating features.")
-                            if song_title in self.songs_memo:
-                                data, sr = self.songs_memo[song_title]
-                            else:
-                                data, sr = librosa.load(song_path)
-                                self.songs_memo[song_title] = (data, sr)
-                            data = augment_audio_fn(data, sr)
+                if album_title in album_label_dict:
+                    if song_title in album_label_dict[album_title]:
+                        if song_title in self.songs_memo:
+                            data, sr = self.songs_memo[song_title]
+                        else:
+                            data, sr = librosa.load(song_path)
+                            self.songs_memo[song_title] = (data, sr)
+                        data = augment_audio_fn(data, sr)
 
-                            curr_start_time = 0
-                            total_duration = librosa.get_duration(y=data, sr=sr)
-                            intervals = album_label_dict[album_title][song_title]
-                            i = 0
-                            while curr_start_time + self.window_size < total_duration:
+                        curr_start_time = 0
+                        total_duration = librosa.get_duration(y=data, sr=sr)
+                        intervals = album_label_dict[album_title][song_title]
+                        i = 0
+                        while curr_start_time + self.window_size < total_duration:
+                            if not os.path.exists(song_save_path + str(i) + ".pth"):
+                                print("window for " + song_title + " " + str(i) + " does not exist!")
                                 curr_sec = curr_start_time
                                 curr_chords = [] # chords in the time frame
                                 while curr_sec < curr_start_time + self.window_size:
@@ -164,18 +206,5 @@ class Preprocess():
                                         "chords": curr_chords
                                     }
                                     torch.save(save_obj, song_save_path + str(i) + ".pth")
-                                curr_start_time += self.hop_interval
-                                i += 1
-    def split_data(self, path):
-        for filename in os.listdir(path):
-            if filename.endswith('pth'):
-                file_path = os.path.join(path, filename)
-                if not file_path[len(file_path) - 5].isdigit():
-                    obj = torch.load(file_path)
-                    if 'features' in obj:
-                        for i in range(len(obj['features'])):
-                            feature = obj['features'][i]
-                            chords_list = obj['chords'][i] 
-                            torch.save({'song_name': filename[:-4], 'feature': feature, 'chord': chords_list}, path + filename[:-4] + str(i) + ".pth")
-                        print("deleting " + file_path)
-                        os.remove(file_path)
+                            curr_start_time += self.hop_interval
+                            i += 1
