@@ -117,8 +117,6 @@ for epoch in range(num_epochs):
     print(" Training...")
     remaining = train_size
     for i_batch, data in enumerate(train_dataloader): 
-        if i_batch % 10 == 0:
-            print(" Number of samples remaining: " + str(remaining))
         features, chords = data
         features.requires_grad = True
         
@@ -129,8 +127,8 @@ for epoch in range(num_epochs):
         
         running_loss += total_loss.item()
         
-        if i_batch % 100 == 99:
-            print("  batch: " + str(i_batch))
+        if i_batch % 100000 == 99999:
+            print(str(remaining) + " samples remaining.")
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i_batch + 1, running_loss / 100))
             running_loss = 0.0
