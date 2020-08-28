@@ -105,6 +105,9 @@ train_dataloader = ChordDataloader(train_set, batch_size=128, shuffle=True, num_
 test_dataloader = ChordDataloader(test_set, batch_size=128, shuffle=True, num_workers=0)
 print("Data loaded!")
 
+
+best_acc = 0
+early_stop_idx = 0
 for epoch in range(num_epochs):
     model.train()
     
@@ -155,8 +158,22 @@ for epoch in range(num_epochs):
             val_prediction, val_loss, weights, val_second = model(val_features, val_chords)
             total += val_prediction.size(0)
             correct += (val_prediction.view(val_chords.size(0), 108) == val_chords).sum().item()
-        result = (100 * correct / total)
-        print("Validation result: %" + str(result) )
-    file_name = config['model'].get("output_dir") + "model-epoch-" + str(epoch)
-    model_obj = {"model": model.state_dict(), 'optimizer': optimizer.state_dict(), "epoch": epoch}
-    torch.save(model_obj, file_name)
+        
+        curr_acc = correct / total
+
+        result_percentage = (100 * curr_acc)
+
+        if best_acc < curr_acc:
+            early_stop_idx = 0
+            best_acc = curr_acc
+            file_name = config['model'].get("output_dir") + "model-epoch-" + str(epoch)
+            model_obj = {"model": model.state_dict(), 'optimizer': optimizer.state_dict(), "epoch": epoch}
+            torch.save(model_obj, file_name)
+            print("best accuracy is now: %" + str(result_percentage))
+        else:
+            early_stop_idx += 1
+        print("Current accuracy: %" + str(result_percentage) )
+    
+    if early_stop_idx > 9:
+        print("Earlying stopping at epoch " + str(epoch + 1))
+        break
